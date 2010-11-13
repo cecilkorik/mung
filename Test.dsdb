@@ -1,0 +1,10 @@
+#0 "System Object" #-1
+:"eval" cp *
+CALLBUILTIN eval argstr
+.
+:"handle_connection" x *
+RETURN #0;
+.
+
+
+
