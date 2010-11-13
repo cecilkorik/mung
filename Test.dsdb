@@ -3,7 +3,7 @@
 CALLBUILTIN eval argstr
 .
 :"handle_connection" x *
-RETURN #0;
+RETURN #0
 .
 
 

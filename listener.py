@@ -2,6 +2,7 @@ import os, sys, time
 import socket
 import select
 import random
+from ringbuffer import RingBuffer
 
 class Connection(object):
 	def __init__(self, id, conn, addr):
@@ -11,6 +12,7 @@ class Connection(object):
 		self.input_encoding = 'raw'
 		self.output_encoding = 'ascii'
 		self.linebuffer = True
+		self.output_buffer = RingBuffer(65536, True)
 
 	def fileno(self):
 		return self.conn.fileno()
@@ -34,6 +36,35 @@ class Connection(object):
 			return unicode(self.escape(data), 'ascii')
 		else:
 			return unicode(data, self.input_encoding, 'ignore')
+			
+	def send(self, data):
+		assert isinstance(data, unicode)
+		try:
+			encoded = data.encode(self.output_encoding, 'replace')
+		except UnicodeEncodeError:
+			try:
+				encoded = data.encode(self.output_encoding, 'ignore')
+			except UnicodeEncodeError:
+				encoded = data.encode('ascii', 'ignore')
+				
+		if len(encoded) > self.output_buffer.sizeleft():
+			return False
+			
+		self.output_buffer.write(encoded)
+		return True
+		
+	def output_waiting(self):
+		return self.output_buffer.bytes_waiting() > 0
+	
+	def flush_buffer(self):
+		if not self.output_waiting():
+			return
+			
+		data = self.output_buffer.read()
+		count = self.conn.send(data)
+		if count < len(data):
+			self.output_buffer.rewind(len(data) - count)
+		
 
 
 class Listener(object):
@@ -102,7 +133,10 @@ class Listener(object):
 			else:
 				conn.close()
 
-
+	def send(connid, data):
+		conn = self.connections[connid]
+		conn.send(data)
+		
 
 	def scan_for_input(self, callback):
 		r, w, x = select.select(self.all_connections(), [], [], 0)
@@ -112,6 +146,11 @@ class Listener(object):
 				self.delete_connection(conn)
 			else:
 				callback(conn, input)
+				
+	def flush_output(self):
+		for conn in self.all_connections():
+			if conn.output_waiting():
+				conn.flush_output()
 
 	def shutdown(self):
 		for x in self.connection_list:
