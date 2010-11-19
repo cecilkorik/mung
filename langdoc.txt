@@ -1,0 +1,24 @@
+simple program:
+
+while (1) 
+arg = "message";
+send(#7407, arg);
+suspend(1.0);
+endwhile
+
+bytecode:
+
+startblock 1
+stack_literal_int 1
+exit_true 1
+stack_literal_str "message"
+set_var arg
+discard_stack 1
+get_var arg
+stack_literal_obj #7407
+call_builtin send
+discard_stack 1
+stack_literal_float 1.0
+call_builtin suspend
+discard_stack 1
+endblock 1

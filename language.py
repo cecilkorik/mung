@@ -7,11 +7,19 @@ class VirtualMachine(object):
 		self.db = db
 		self.active_task_id = None
 		self.sleepytime = None
+		self.codestack = []
 		self.stack = []
 		self.contexts = []
 		self.tasks = {}
 		self.task_sequence = []
 		self.ticks_used = 0
+		self.exception_thrown = None
+		
+	def pop_code(self):
+		return self.code_stack.pop()
+		
+	def push_code(self, code):
+		self.code_stack.append(code)
 		
 	def pop(self, count=1):
 		return [uncoerce(self.stack.pop()) for x in range(count)]
@@ -52,11 +60,29 @@ class VirtualMachine(object):
 		self.stack = task[1]
 		self.contexts = task[2]
 		self.ticks_used = task[3]
+		self.exception_thrown = None
 	
 	def get_next_task(self):
 		heapq.heappop(self.task_sequence)
 	
-	def run_active_task
+	def uncaught_exception(self):
+		pass
+	
+	def run_active_task(self):
+		task_id = self.active_task_id
+		while task_id == self.active_task_id and self.code_stack and self.exception_thrown == None:
+			nextop = self.pop_code()
+			nextop.execute(self)
+		
+		if self.exception_thrown != None:
+			self.uncaught_exception()
+			self.finished_start_next()
+			
+		if task_id == self.active_task_id:
+			self.finished_start_next()
+			
+		self.finished_start_next
+			
 	
 	def run(self):
 		self.sleepytime = None
@@ -112,6 +138,14 @@ class CallBuiltin(CodeOp):
 		funcname, = vm.pop(1)
 		builtin_map[funcname](vm)
 		
+class DiscardStack(CodeOp):
+	def __init__(self):
+		pass
+	def execute(self, vm):
+		count, = vm.pop(1)
+		vm.pop(count)
+
+
 class StartContext(CodeOp):
 	def execute(self, vm):
 		vm.push_context()
