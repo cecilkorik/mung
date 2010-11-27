@@ -9,16 +9,35 @@ endwhile
 bytecode:
 
 startblock 1
-stack_literal_int 1
-exit_true 1
-stack_literal_str "message"
-set_var arg
-discard_stack 1
-get_var arg
-stack_literal_obj #7407
-call_builtin send
-discard_stack 1
-stack_literal_float 1.0
-call_builtin suspend
-discard_stack 1
+stack_literal_int 1 1
+exit_true 1 0
+stack_literal_str "message" 1
+set_var arg 1
+discard_stack 1 0
+get_var arg 1
+stack_literal_obj #7407 2
+call_builtin send 1
+discard_stack 1 0
+stack_literal_float 1.0 1
+call_builtin suspend 1
+discard_stack 1 0
 endblock 1
+
+other stuff:
+
+var = 1 == 0 + 1
+
+
+list = [1, 2, @[3, 4], 5]
+
+literal 1
+literal 2
+	literal 3
+	literal 4
+	literal 2
+	makelist
+	flatten
+literal 5
+literal 4 <-- the length
+makelist 4
+
