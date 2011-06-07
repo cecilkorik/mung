@@ -1,6 +1,6 @@
 
 
-class DSDB_Database(object):
+class DSDB_Database(Database):
 	def __init__(self, dbname):
 		self.dbname = dbname
 		self.fn = "%s.dsdb" % (dbname,)

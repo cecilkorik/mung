@@ -4,6 +4,65 @@ import select
 import random
 from ringbuffer import RingBuffer
 
+class Poller(object):
+	POLLIN = 1
+	POLLERR = 2
+	POLLRD = 3	# POLLIN | POLLERR
+	POLLWR = 4
+	
+	def __init__(self):
+		try:
+			self.mode = select.poll()
+			Poller.POLLIN = select
+			Poller.POLLRD = select.POLLIN|select.POLLPRI|select.POLLHUP|select.POLLERR|select.POLLNVAL
+			Poller.POLLWR = select.POLLOUT
+		except:
+			self.mode = select.select
+			Poller.POLLIN = 1
+			Poller.POLLERR = 2
+			Poller.POLLRD = Poller.POLLIN|Poller.POLLERR
+			Poller.POLLWR = 4
+			
+		self.registered = {}
+	
+	def register_read(self, listener, fd):
+		if not fd in self.registered:
+			self.registered[fd.fileno()] = [0, listener, fd]
+		self.registered[fd.fileno()][0] |= Poller.POLLRD
+		if self.mode != select.select:
+			self.mode.register(fd.fileno(), Poller.POLLRD)
+		
+	def register_write(self, listener, fd):
+		if not fd in self.registered:
+			self.registered[fd.fileno()] = [0, listener, fd]
+		self.registered[fd.fileno()][0] |= Poller.POLLWR
+		if self.mode != select.select:
+			self.mode.register(fd.fileno(), Poller.POLLRD|Poller.POLLWR)
+	
+	def unregister(self, fd):
+		if self.mode == select.select and fd in self.registered:
+			del self.registered[fd.fileno()]
+		else:
+			self.mode.unregister(fd.fileno())
+		
+	def get_fd(self, fd, flags):
+		return (self.registered[fd][1], self.registered[fd][2], flags)
+	
+	def poll(self, timeout):
+		if self.mode == select.select:
+			rdfd = []
+			wrfd = []
+			for fd, flags in self.registered.items():
+				if flags & Poller.POLLRD:
+					rdfd.append(fd)
+				if flags & Poller.POLLWR:
+					wrfd.append(fd)
+			r, w, x = select.select(rdfd, wrfd, rdfd, timeout)
+			return [self.get_fd(fd, Poller.POLLIN) for fd in r] + [self.get_fd(fd, Poller.POLLWR) for fd in w] + [self.get_fd(fd, Poller.POLLERR) for fd in x]
+		else:
+			timeout = int(round(timeout * 1000.0, 0))
+			return [self.get_fd(fd, flags) for fd, flags in self.mode.poll(timeout)]
+
 class Connection(object):
 	def __init__(self, id, conn, addr):
 		self.id = id
@@ -75,6 +134,7 @@ class Listener(object):
 		self.connections = {}
 		self.connection_list = []
 		self.connection_list_dirty = False
+		self.remove_from_poller = []
 
 		self.MAX_CONN = 3000
 
@@ -108,6 +168,7 @@ class Listener(object):
 	def delete_connection(self, conn):
 		print "%s disconnected." % (conn.id,)
 		del self.connections[conn.id]
+		self.remove_from_poller.append(conn.conn)
 		self.connection_list_dirty = True
 	
 	def all_connections(self):
@@ -147,10 +208,22 @@ class Listener(object):
 			else:
 				callback(conn, input)
 				
+	def update_poller(self, poll):
+		for dconn in self.delete_from_poller:
+			poll.unregister(dconn)
+		self.delete_from_poller = []
+		for conn in self.all_connections():
+			if conn.output_waiting():
+				poll.register_write(self, conn.conn)
+			else:
+				poll.register_read(self, conn.conn)
+			
+		
+	
 	def flush_output(self):
 		for conn in self.all_connections():
 			if conn.output_waiting():
-				conn.flush_output()
+				conn.flush_buffer()
 
 	def shutdown(self):
 		for x in self.connection_list:

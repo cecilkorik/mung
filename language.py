@@ -1,6 +1,7 @@
 import sys
 import time
 from builtins import builtin_map
+from database import ObjRef
 import bisect
 import optimizer
 import traceback
@@ -65,6 +66,26 @@ def tokenparser(func):
 		
 	return newfunc
 
+def disallow_keywords(tokens,keywords=None):
+	if keywords == None:
+		keywords = disallow_keywords.keywords
+	else:
+		keywords = set(keywords)
+		
+	for t in tokens:
+		if isinstance(t, VMIdent):
+			if t.name in keywords:
+				raise ParseException, "Restricted keyword: %s" % (t.name,)
+		elif isinstance(t, unicode):
+			tstr = t.encode('ascii', 'ignore')
+			if tstr in keywords:
+				raise ParseException, "Restricted keyword: %s" % (tstr,)
+		elif isinstance(t, str):
+			if t in keywords:
+				raise ParseException, "Restricted keyword: %s" % (t,)
+				
+disallow_keywords.keywords = set('if,elseif,else,endif,try,except,finally,endtry,while,endwhile,continue,break,for,foreach,endfor'.split(','))
+
 def codejoin(*args):
 	rv = []
 	for arg in args:
@@ -102,10 +123,6 @@ def uncoerce(value):
 	assert isinstance(value, VMType)
 	return value.value
 	
-
-class ObjRef(object):
-	def __init__(self, objnum):
-		self.objnum = objnum
 
 class VMBaseObject(object):
 	def __init__(self):
@@ -161,7 +178,7 @@ class VMTable(VMType):
 class VMList(VMType):
 	def __init__(self, value):
 		VMType.__init__(self)
-		self.value = dict(value)
+		self.value = list(value)
 
 	@staticmethod
 	@tokenparser
@@ -222,11 +239,12 @@ class VMIdent(VMRef):
 		self.name = name
 		
 	def bytecode(self):
-		return [StackLiteral(self.name)]
+		return [StackLiteral(unicode(self.name))]
 
 	@staticmethod
 	@tokenparser
 	def parse(tokens):
+		disallow_keywords(tokens)
 		return VMIdent(tokens[0])
 
 	def __repr__(self):
@@ -239,7 +257,7 @@ class VMVariable(VMRef):
 		self.name = name
 
 	def ref(self):
-		return [StackLiteral(self.name)]
+		return [StackLiteral(unicode(self.name))]
 
 	def bytecode(self):
 		return codejoin(self.ref(), GetVariable())
@@ -247,6 +265,7 @@ class VMVariable(VMRef):
 	@staticmethod
 	@tokenparser
 	def parse(tokens):
+		disallow_keywords(tokens)
 		return VMVariable(tokens[0])
 
 	def __repr__(self):
@@ -388,15 +407,17 @@ class GetVariable(CodeOp):
 		
 class CallBuiltin(CodeOp):
 	def execute(self, vm):
-		funcname, = vm.pop(1)
-		builtin_map[funcname](vm)
+		funcname, args = vm.pop(2)
+		funcname = funcname.encode('ascii', 'ignore')
+		retval = builtin_map[funcname](vm, args)
+		vm.push(retval)
 
 	@staticmethod
 	@tokenparser
 	def parse(tokens):
-		if not tokens[0] in builtin_map:
-			raise ParseException, 'Attempt to call undefined builtin function: "%s"' % (tokens[0],)
-		return codejoin(StackLiteral(VMString(tokens[0])), tokens[1], CallBuiltin())
+		#if not tokens[0] in builtin_map:
+		#	raise ParseException, 'Attempt to call undefined builtin function: "%s"' % (tokens[0],)
+		return codejoin(tokens[0], tokens[1], CallBuiltin())
 		
 class CallFunction(CodeOp):
 	def execute(self, vm):
@@ -555,7 +576,7 @@ class Assignment(CodeOp):
 
 class StackLiteral(StackCodeOp):
 	def execute(self, vm):
-		vm.push(self.value)
+		vm.push(self.stack_value)
 		
 	@staticmethod
 	@tokenparser
@@ -563,6 +584,10 @@ class StackLiteral(StackCodeOp):
 		return StackLiteral(tokens[0])
 	
 	def __repr__(self):
+		try:
+			nv = coerce(self.stack_value)
+		except TypeError:
+			return "<** INVALID STACKLITERAL: %r **>" % (self.stack_value,)
 		return "<StackLiteral %s>" % (coerce(self.stack_value),)
 
 
@@ -585,6 +610,8 @@ class StackToList(CodeOp):
 	@staticmethod
 	@tokenparser
 	def parse(tokens):
+		if not tokens:
+			return codejoin(StackLiteral(0), StackToList())
 		rv = codejoin(tokens[0][0], StackLiteral(len(tokens)), StackToList())
 		return rv
 	

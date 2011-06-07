@@ -1,7 +1,8 @@
 import os, sys, time
-from listener import Listener
+from listener import Listener, Poller
 from language import VirtualMachine
 from database_fake import Fake_Database as Database
+from parse import static_parser
 
 class Server(object):
 	def __init__(self, dbname):
@@ -14,8 +15,14 @@ class Server(object):
 		self.server_started = None
 		self.loop_started = None
 		self.listeners = []
+		self.poller = Poller()
 
 	def listen(self, addr, port):
+		l = Listener()
+		l.listen(addr, port)
+		self.listeners.append(l)
+
+	def unlisten(self, addr, port):
 		l = Listener()
 		l.listen(addr, port)
 		self.listeners.append(l)
@@ -24,6 +31,8 @@ class Server(object):
 		self.server_started = time.time()
 		while True:
 			self.loop_started = time.time()
+			
+			"""
 			for l in self.listeners:
 				l.handle_incoming_connections()
 				l.scan_for_input(self.read_input)
@@ -31,6 +40,9 @@ class Server(object):
 			for l in self.listeners:
 				l.flush_output()
 			self.idlewait()
+			"""
+			self.poller.poll(self.get_sleepytime())
+			
 
 
 	def read_input(self, conn, data):
@@ -39,7 +51,17 @@ class Server(object):
 			del ds[-1]
 		for line in ds:
 			print "%s: %s" % (conn.id, line)
+			cmd, vars = static_parser.parse_command(line)
+			self.db.match_command(cmd, vars)
+	
+	def get_sleepytime(self):
+		if self.vm.sleepytime == None:
+			"virtual machine is still busy, no sleeping on the job!"
+			return 0.0
+		
+		return self.vm.sleepytime
 			
+		
 	def idlewait(self):
 		if self.vm.sleepytime == None:
 			"virtual machine is still busy anyway, no sleeping on the job!"

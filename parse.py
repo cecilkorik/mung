@@ -61,7 +61,7 @@ class Parser(object):
 		propref = (objrefexpr + point + ident).setParseAction(VMPropRef.parse) | coreref
 		fileref = (objrefexpr + excl + ident).setParseAction(VMFileRef.parse)
 
-		argspec = delimitedList(expr)
+		argspec = Optional(delimitedList(expr))
 		argspec.setParseAction(StackToList.parse)
 		funccall = objrefexpr + call + identexpr + lpar + argspec + rpar
 		
@@ -174,12 +174,25 @@ class Parser(object):
 		self.parser = block
 		#print argspec.parseString("hello(hi.xyz)", parseAll=True)
 		#print block.parseString(u"hi.xyz + #555.test;", parseAll=True)
+		#print block.parseString("""serverlog();""")
 
 	def parse(self, data):
 		rv = self.parser.parseString(data, parseAll=True)
 		
 		return optimizer.optimize(rv)
 
+	def parse_command(self, line):
+		ls = line.split(' ')
+		cmd = ls[0]
+		argstr = ' '.join(ls[1:])
+		vars = {
+			'cmdstr': line,
+			'cmd': cmd,
+			'argstr': argstr,
+			'args': [x.strip() for x in ls[1:] if x.strip() != '']
+		}
+		
+		return [cmd, vars]
 
 	def test(self):
 		#print self.parse(u"if (1) #740.xyz + -hello.world; endif")
@@ -187,6 +200,9 @@ class Parser(object):
 		data = unicode(open("test.moo", "r").read(), 'utf-8')
 		print self.parse(data)
 	
+	
+static_parser = Parser()
+
 if __name__ == "__main__":
 	p = Parser()
 	p.test()
