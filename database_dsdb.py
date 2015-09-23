@@ -1,4 +1,4 @@
-
+# Dead Simple Database
 
 class DSDB_Database(Database):
 	def __init__(self, dbname):

@@ -1,11 +1,5 @@
 from parse import static_parser
-
-class ObjRef(object):
-	def __init__(self, objnum):
-		self.objnum = objnum
-		
-	def __eq__(self, other):
-		return self.objnum == other.objnum
+from language import ObjRef
 
 
 class DBObject(object):
@@ -88,7 +82,7 @@ class Database(object):
 		so = DBObject(ObjRef(0))
 		self.objects = [so]
 		
-		so.
+		
 		
 	def set_property(self, obj, prop, val):
 		o = self.get(obj)

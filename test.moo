@@ -6,3 +6,4 @@ vxx = "abc";
 else
 vvv = #-1; vvx = $nothing;
 endif
+serverlog(vvv);

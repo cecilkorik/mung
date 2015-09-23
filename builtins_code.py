@@ -8,3 +8,4 @@ class builtin_functions(object):
 		print "serverlog: %s" % (args,)
 
 bi = builtin_functions()
+

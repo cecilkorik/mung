@@ -198,7 +198,9 @@ class Parser(object):
 		#print self.parse(u"if (1) #740.xyz + -hello.world; endif")
 		
 		data = unicode(open("test.moo", "r").read(), 'utf-8')
-		print self.parse(data)
+		rv = self.parse(data)
+		print rv
+		return rv
 	
 	
 static_parser = Parser()

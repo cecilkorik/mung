@@ -54,13 +54,13 @@ class VirtualMachine(object):
 		task = VMTask(self.generate_task_id(), bytecode, vars)
 		self.tasks[task.task_id] = task
 		heapq.heappush(self.next_task_heap, (time.time(), task.task_id, task))
-
+		
 	def code_pop(self):
 		return self.task.code_stack.pop()
 		
 	def code_push(self, code):
-		if isinstance(code, CodeOpSequence):
-			for op in reverse(code):
+		if isinstance(code, list):
+			for op in reversed(code):
 				self.task.code_stack.append(op)
 		else:
 			self.task.code_stack.append(code)
@@ -111,6 +111,11 @@ class VirtualMachine(object):
 			now = time.time()
 			newtask = heapq.heappop(self.active_task_heap)
 			return self.activate_task(newtask)
+		elif self.next_task_heap:
+			now = time.time()
+			newtask = heapq.heappop(self.next_task_heap)
+			return self.activate_task(newtask)
+			
 	
 	def activate_task(self, task):
 		now = time.time()
@@ -153,7 +158,7 @@ class VirtualMachine(object):
 		
 	
 	def jump(self, target):
-		while self.code_stack:
+		while self.task.code_stack:
 			nextop = self.code_pop()
 			if isinstance(nextop, EndBlock):
 				if nextop.label == target:
@@ -196,3 +201,14 @@ class VirtualMachine(object):
 			print "executing %s with stack %s" % (op, self.task.stack)
 			#op.load_stack(self)
 			op.execute(self)
+			
+	def test(self):
+		import parse
+		testcode = parse.static_parser.test()
+		self.spawn_forked_task(testcode, {})
+		self.run()
+			
+static_vm = VirtualMachine(None)
+			
+if __name__ == "__main__":
+	static_vm.test()
