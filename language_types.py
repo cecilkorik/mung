@@ -117,7 +117,7 @@ class VMObjRef(VMType):
 		if isinstance(value, ObjRef):
 			self.value = value
 		elif isinstance(value, (float, int)):
-			self.value = ObjRef(int(value))
+			self.value = int(value)
 		else:
 			raise TypeError, "Attempted to create VMObjRef with invalid object reference: %r" % (value,)
 			
@@ -127,7 +127,7 @@ class VMObjRef(VMType):
 		return StackLiteral(VMObjRef(int(tokens[1])))
 		
 	def __repr__(self):
-		return "#%s" % (self.value.objnum,)
+		return "#%s" % (self.value,)
 
 class VMRef(VMBaseObject):
 	pass

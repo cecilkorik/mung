@@ -1,7 +1,46 @@
 import random, heapq
 from parse import Parser
 from language import *
+import errors
 
+"""
+class VMMemory(object):
+	def __init__(self):
+		self.objects = []
+		
+	def create(self, i):
+		self.objects[i] = None
+		
+	def create_new(self):
+		self.objects.append(abc)
+		
+	def destroy(self, i):
+		self.objects[i] = None
+		
+	def renumber(self, i, j):
+		self.objects[j], self.objects[i] = self.objects[i], self.objects[j]
+		
+	def trim(self):
+		newmax = None
+		for i in xrange(len(self.objects)-1, -1, -1):
+			if self.objects[i] != None:
+				newmax = i
+				break
+		if newmax != None:
+			self.objects = self.objects[:newmax+1]
+		
+	def get_obj(self, i):
+		if i < 0:
+			raise errors.VMRuntimeError(errors.enum.E_INVIND)
+		elif i >= len(self.objects):
+			raise errors.VMRuntimeError(errors.enum.E_INVIND)
+		else:
+			o = self.objects[i]
+			if o == None:
+				raise errors.VMRuntimeError(errors.enum.E_INVIND)
+			else:
+				return o
+"""		
 
 class VMContext(object):
 	def __init__(self, vars):
@@ -36,7 +75,7 @@ class VirtualMachine(object):
 	def generate_task_id(self):
 		rv = random.randint(1,self.max_tasks)
 		if len(self.tasks) >= self.max_tasks:
-			raise RangeError, "Maximum number of tasks exceeded"
+			raise RangeError("Maximum number of tasks exceeded")
 		while rv in self.tasks:
 			rv += 1
 			if rv > self.max_tasks:
@@ -194,7 +233,8 @@ class VirtualMachine(object):
 		self.ticks_used += op.ticks()
 		if self.ticks_used > self.max_ticks:
 			"ran out of ticks"
-			self.exc_push("out of ticks exception")
+			"resource exceptions cannot be caught, so stop execution immediately"
+			self.exc_push(errors.E_TICKS)
 			self.uncaught_exception()
 			self.finished_start_next()
 		else:

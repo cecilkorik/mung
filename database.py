@@ -1,5 +1,6 @@
 from parse import static_parser
 from language import ObjRef
+import errors
 
 
 class DBObject(object):
@@ -21,7 +22,7 @@ class DBObject(object):
 		return None
 
 
-	def get_property(self, prop):
+	def get_prop(self, prop):
 		if prop in self.props:
 			rv = self.props[prop]
 		else:
@@ -30,7 +31,6 @@ class DBObject(object):
 	def add_func(self, name):
 		self.funcs.append(DBFunc(self.obj, name))
 		
-	
 
 class DBFunc(object):
 	def __init__(self, objref, name):
@@ -40,6 +40,7 @@ class DBFunc(object):
 		self.flags = ""
 		self.bytecode = []
 		self.code = ""
+		self.index = None
 		
 	def compile(self, code):
 		try:
@@ -72,11 +73,11 @@ class Database(object):
 		self.objects = []
 		
 	def load(self):
-		raise NotImplementedError, "This function should be overridden by a derived class"
+		raise NotImplementedError("This function should be overridden by a derived class")
 	def checkpoint(self):
-		raise NotImplementedError, "This function should be overridden by a derived class"
+		raise NotImplementedError("This function should be overridden by a derived class")
 	def save(self):
-		raise NotImplementedError, "This function should be overridden by a derived class"
+		raise NotImplementedError("This function should be overridden by a derived class")
 		
 	def bootstrap_minimal(self):
 		so = DBObject(ObjRef(0))
@@ -84,7 +85,7 @@ class Database(object):
 		
 		
 		
-	def set_property(self, obj, prop, val):
+	def set_prop(self, obj, prop, val):
 		o = self.get(obj)
 		o.set_property(prop, val)
 		
@@ -92,7 +93,7 @@ class Database(object):
 		o = self.get(obj)
 		o.set_file(fn, val)
 		
-	def get_property(self, obj, prop):
+	def get_prop(self, obj, prop):
 		o = self.get(obj)
 		return o.get_property(prop)
 		
@@ -113,11 +114,11 @@ class Database(object):
 	
 	def destroy(self, ref):
 		if ref.objnum >= len(self.objects) or ref.objnum < 0:
-			raise ValueError, "Invalid object number"
+			raise ValueError("Invalid object number")
 		
 		obj = self.objects[ref.objnum]
 		if obj == None:
-			raise ValueError, "Object already destroyed"
+			raise ValueError("Object already destroyed")
 			
 		for child in obj.children:
 			child.parent = ObjRef(-1)
@@ -132,10 +133,24 @@ class Database(object):
 			if self.objects[i] != None:
 				i += 1
 				break
-		
+				
+	def get_obj(self, objref):
+		i = objnum
 		if i < len(self.objects):
 			self.objects[i:] = []
 
+		if i < 0:
+			raise errors.VMRuntimeError(errors.enum.E_INVIND)
+		elif i >= len(self.objects):
+			raise errors.VMRuntimeError(errors.enum.E_INVIND)
+		else:
+			o = self.objects[i]
+			if o == None:
+				raise errors.VMRuntimeError(errors.enum.E_INVIND)
+			else:
+				return o
+			
+			
 	def get(self, objref):
 		return self.objects[objref.objnum]
 		

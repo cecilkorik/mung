@@ -97,8 +97,10 @@ class NoOp(CodeOp):
 		
 class GetProperty(CodeOp):
 	def execute(self, vm):
-		prop, obj = vm.pop(2)
-		vm.push(vm.db.get_property(obj, prop))
+		obj, prop = vm.pop(2)
+		objstore = vm.db.get_obj(obj)
+		val = objstore.get_prop(prop)
+		vm.push(val)
 
 	@staticmethod
 	@tokenparser
@@ -118,8 +120,10 @@ class SetProperty(CodeOp):
 
 class GetFile(CodeOp):
 	def execute(self, vm):
-		prop, obj = vm.pop(2)
-		vm.push(vm.db.get_file(obj, prop))
+		obj, prop = vm.pop(2)
+		objstore = vm.db.get_obj(obj)
+		val = objstore.get_file(prop)
+		vm.push(val)
 
 class SetFile(CodeOp):
 	def execute(self, vm):

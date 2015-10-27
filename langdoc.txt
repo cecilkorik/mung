@@ -1,3 +1,272 @@
+DIFFERENCES FROM LAMBDAMOO
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The idea is that most things should be marginally similar, but there is no guarantee of backwards
+compatibility. In fact, it is intended that some of MOO's most adorable anachronisms will be 
+updated to more modern techniques and terminology. This will by neccessity break compatibility in
+many situations.
+
+It is likely that the only way to port code or objects from LambdaMOO will involve an intermediate 
+translation step, which is beyond the scope of this project right now. The best I can offer is that
+said translation step SHOULD BE possible, and hopefully allows nearly 100% of code to be portable,
+at least in theory...
+
+Key differences from LambdaMOO include:
+
+	* The list of built-in functions has changed; some renamed, some new, some removed.
+	* "Verbs" will be referred to as "functions", or "func" when an abbreviated form is required.
+		(yes, I know this is sad. I have fond memories of "programming verbs" too)
+	* "Permissions" in the sense of +r or "rxd" have been renamed to "flags", as their
+		meaning and usage has expanded significantly.
+	* The "+w" world-writable flag has been removed, because it is absolutely stupid and should
+		never be used anyway. In exchange, there is now a "+e" flag supporting extended permissions
+		which allows permissions to be extended to larger groups.
+	* Pre-emptive multitasking is now a plausible, albeit unimplemented, option.
+	* Various functionality that was provided through patches and extensions to the LambdaMOO
+		server will now have functional equivalents made available through built-ins.
+	* Files are now a built-in, first-class feature that works similarly to properties, however
+		they allow data to be stored on disk, rather than in memory.
+	* Binary data (raw bytes) will be a separate and distinct datatype from regular strings.
+	* Strings will be assumed to be UTF-8 at all times. To index or manage them as raw byte
+		strings, they will need to be converted to the bytes datatype.
+	* UTF-8 strings will be permitted for pretty much everything, including property and function
+		names, output to users, and it will be expected as user input as well.
+	* notify, tell, and announce will quite possibly be given more contemporary names.
+	* Memory usage will be monitored on a task, user, and property basis and reasonable limits
+		will be enforced, in the same way that object quotas are limited for users, and in the same
+		way that seconds/tick usage are limited for tasks. However avoiding the task memory limit 
+		will not be as simple as calling suspend(0) :)
+	* The meaning of +r has been reversed. It now means "restricted". Globally readable is the
+		default state for all objects, properties, files and functions. 
+	* Built-in properties like "wizard" are gone, replaced by various built-in functions.
+	* The characters " : and ; are no longer hardcoded to say, emote, and eval respectively.
+
+
+OBJECT FLAGS
+~~~~~~~~~~~~
+
+f = fertile
+		Fertile objects can have children created by anyone. Normally, only the owner (or a wizard)
+		can use this object as a parent for another object. +f extends this ability to everyone. 
+		If desired, more granular control can be achieved through the +e extended permissions.
+
+e = extended permissions
+		Normally, an object has 1 owner, no more. The owner (and any wizards) are able to modify
+		the object and all its attributes. This is adequate in most cases, however, an extended
+		permissions system can be enabled through this flag that allows a more complicated but
+		robust way of assigning more granular permissions across multiple users. The owner (and any
+		wizards) will still maintain full access however.
+		
+		This is not enabled by default because it's generally unnecessary and can be confusing.
+
+r = restricted
+		This restricts the visibility of several of the object's attributes to be limited to the
+		owner and wizards. The meaning of restriction in this case is actually quite limited.
+		Other users are only prevented from viewing the lists of locally-defined properties,
+		functions, and files, or any of the attributes of those properties, functions, and files.
+		
+		It ONLY applies to the lists, flags and attributes however. Notably, it does NOT prevent
+		access to the CONTENT. The value of a property, the contents of a file, or the source code
+		of a function are all fully accessible on a restricted object, provided the property, file
+		or function are themselves not restricted. Additionally, some flags and attributes can be
+		inferred by various methods of probing, especially if the object has children which are not
+		+r. Functions defined on this object can also still be called simply by guessing their
+		names, unless the function is flagged +y. One countermeasure provided to prevent users from
+		simply brute-force fishing for valid names is that any attempt to access an unknown name 
+		on a +r object will result in E_PERM instead of E_PROPNF, E_FUNCNF, etc. This makes it
+		impossible for a fisher to know whether the name is actually valid and restricted by its
+		own +r flag, or whether the name is simply invalid.
+
+
+PROPERTY FLAGS
+~~~~~~~~~~~~~~
+
+c = copy value to children
+		Normally a child object has a "cleared" property, which means the value is inherited from
+		the parent. If the value on the parent changes, so do all the "cleared" properties on the
+		children. However, with the +c flag, the value will be copied to the child object at the
+		time of creation. Further changes to the parent's value will have no effect on the child.
+		
+		It is possible to "clear" a +c property, however all this will do is re-copy the parent's
+		value at that moment. Even once "cleared", further changes on the parent will still not 
+		propagate to the child's properties. +c properties are essentially "copy-on-create"
+		instead of the default "copy-on-write".
+		
+		Mutually exclusive with +s and completely irrelevant with +h
+
+d = direct access / dynamic
+		This property is excluded from the the usual behavior of getter/setter functions.
+		Normally, if an appropriate getter/setter function is available, a call to that function
+		will be transparently substituted instead of a direct assignment. The +d flag overriddes
+		that behavior.
+		
+h = hidden / private
+		This property ONLY exists on the object itself, children will not contain this property.
+		The same property can be added to the children as if it doesn't exist, because it doesn't.
+		
+		Setting this flag makes +c and +s meaningless, as no such child property exists.
+
+s = shared / static
+		With this flag, the property inherited by children will all share the same value with the
+		parent. Setting the value on the parent will also cause the value to change on all the
+		children. Less obviously, setting the value on one of the children will also change the
+		value on all other children and on the parent as well. The same value is shared among all.
+		
+		Note that in combination with the +o flag, this can allow the property to be freely
+		modified by users other than the owner, which may or may not be the expected behavior and
+		should be approached with caution. Also note that the +s and +o flags, in combination with
+		any object or child that has the +f flag is essentially allowing a world-writable property.
+		This should be approached with even more extreme caution, and is a great reason to avoid
+		ever setting +s in combination with +o in the first place.
+		
+o = transfer ownership
+		Normally, the property inherited by an object's children will still be owned by the same 
+		user that owns the property on the parent. If the +o flag is set, the inherited property 
+		will instead be owned by the same user that owns the child object.
+
+		
+e = extended permissions
+		Normally, a function has 1 owner, no more. The owner (and any wizards) are able to modify
+		the property and all its attributes. This is adequate in most cases, however, an extended
+		permissions system can be enabled through this flag that allows a more complicated but
+		robust way of assigning more granular permissions across multiple users. The owner (and any
+		wizards) will still maintain full access however.
+		
+		This is not enabled by default because it's generally unnecessary and can be confusing.
+		
+
+FUNCTION FLAGS
+~~~~~~~~~~
+
+a = access restricted
+		Functions with this flag cannot be overridden on child objects, even by the owner of the
+		child object. This is checked and enforced on creation, as well as on chparent. Notable
+		exceptions are: 
+			* The function can be overridden if the creator can also edit the code on the 
+				a-flagged parent function
+			* Wizards are obviously exempt for the above reason
+			* Once created, the function can be chowned freely, even if the new owner does not have
+				the neccessary privileges to create such a function.
+			* Additionally, if the overriding function does not ALSO have an +a flag, then children
+				of THAT object can also freely override the function without restriction.
+				
+r = public readable
+		Functions with this flag have public source code that is visible to everyone
+		
+x = function-callable execution allowed
+		If this function is called from another function, the interpreter will ensure this flag
+		is set. If not, an E_FUNCNF exception will be raised.
+		
+c = command-line execution allowed
+		The command-line processor will include this function in its search as it attempts to match
+		the input with an appropriate command-line function.
+		
+e = extended permissions
+		Normally, a function has 1 owner, no more. The owner (and any wizards) are able to modify
+		the function and all its attributes. This is adequate in most cases, however, an extended
+		permissions system can be enabled through this flag that allows a more complicated but
+		robust way of assigning more granular permissions across multiple users. The owner (and any
+		wizards) will still maintain full access however.
+		
+		This is not enabled by default because it's generally unnecessary and can be confusing.
+		
+m = legacy command-line argument matching (dobj/prepstr/iobj, etc)
+		This uses the LambdaMOO-style argument matching.
+
+y = owner-only
+		This function can only be called by the owner (or a wizard) or by someone entitled to do so
+		through +e. Attempts to call the function by other players will fail with E_PERM.
+		
+		
+p = pre-emptive multitasking
+		This is a placeholder for future plans to allow pre-emptive multitasking on an opt-in
+		basis. This will allow the virtual machine to decide (based on resource availability) when 
+		the function can be paused, instead of relying on a specific tick limit and expecting the
+		process to cooperatively decide to suspend itself before that limit is reached.
+
+s = set permissions (WIZARD ONLY)
+		Normally, a function executes with the permissions of the person who wrote the code. This
+		flag specifies that the code should instead execute with the permissions of the player
+		who initiated the command. This is an alternative to using set_task_perms boilerplate.
+		
+u = unlimited execution time (WIZARD ONLY)
+		This flag allows a function (and all functions it calls) to run continuously, without any
+		risk of the function being pre-empted by other processes or any need to suspend, no matter
+		how long it takes to run. This flag should be enabled with EXTREME caution, as a badly-
+		behaved process running +u can completely monopolize the server, preventing all input or
+		new connections from being processed.
+		
+		The main purpose of this flag is to allow "absolutely critical" functions to run without
+		interruption. Such functions should be few and far between, and very specific and limited
+		in what they actually do. It is imperative that the +u function takes abundant care with
+		the inputs it accepts and the functions it calls, as abuse can be very easy. For example by
+		repeatedly calling the function in a loop and passing an enormous list as an argument.
+		
+f = fail silently
+		Exceptions are suppressed and supplied as the return value (if callable.)
+		Command-line functions will simply exit silently if an exception is encountered.
+
+FILE FLAGS
+~~~~~~~~~~
+
+Files are a first-class data storage feature that can be used similarly to properties in many
+respects. However they do not use inheritance, and they may be very slightly slower. Their main
+advantage is mostly that they are not stored in memory, making them suitable for storing very
+large data. They also support additional features for partial, incremental loading and random
+access that properties do not. 
+
+At their simplest and most straightforward, files can be accessed with an exclamation mark "!" 
+using the syntax #789!filename
+
+More specific methods of accessing file data are documented in the built-in functions.
+
+b = binary mode
+		A file in binary mode may only contain the bytes datatype, and will always provide a bytes
+		datatype when read. The actual file stored on disk will match the exact bytes written to
+		or read from the file, which can be useful when the file either comes from or is intended 
+		to be used by another program.
+		
+		A file must be flagged for binary mode in order to enable several types of file operations,
+		such as random access.
+		
+		Note that setting a file +b will delete all existing content, UNLESS the content is already
+		of type "bytes". If the existing content was already bytes, then it is populated into the
+		file as-is. All other datatypes (even strings or lists containing only bytes) will be
+		deleted and the new +b file will be empty. When setting a file +b, the data it contains
+		should be converted to bytes explicitly first if you wish to keep it.
+		
+		Conversely, -b will cause the contents of the file on disk to change, as the bytes data is
+		converted into the internal storage format, but doing so will always preserve the content.
+		And because the stored data retains the "bytes" datatype, it can be converted directly back
+		to +b without data loss. Although you should avoid frequent switching of this flag, as the
+		entire file needs to be completely re-written to disk whenever the flag is changed.
+		
+r = readable
+		Files flagged +r will be readable by any user, otherwise they will be private and readable
+		only by the owner.
+
+d = direct access / dynamic
+		Similar to properties, this flag exempts the file from being transparently intercepted by
+		getter/setter functions. However, it's important to note that getter/setters on files can
+		already be easily bypassed simply by using the raw file access functions provided as
+		built-ins. This flag only applies when files are accessed by the "!" syntax.
+		
+l = large file
+		Files flagged with this are considered to be too large to access all at once using the "!"
+		syntax or by any functions that read the whole file into memory at once. Attempts to do so
+		will cause the error E_IDUNNO to be raised.
+
+
+TASK ATTRIBUTES
+~~~~~~~~~~~~~~~
+
+A task has a number of important attributes, mostly read-only, which can be accessed through
+built-in functions. These persist throughout the entire task, 
+
+
+CHICKENSCRATCH
+~~~~~~~~~~~~~~
+
 simple program:
 
 while (1) 

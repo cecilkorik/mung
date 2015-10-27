@@ -7,3 +7,5 @@ else
 vvv = #-1; vvx = $nothing;
 endif
 serverlog(vvv);
+serverlog(#0.test);
+serverlog("what");
