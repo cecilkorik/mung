@@ -1,2 +1,5 @@
 syntax: glob
 *.pyc
+bin
+lib
+include

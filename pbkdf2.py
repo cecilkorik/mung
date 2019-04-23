@@ -44,7 +44,8 @@ import hmac
 import hashlib
 from struct import Struct
 from operator import xor
-from itertools import izip, starmap
+from itertools import starmap
+import binascii
 
 
 _pack_int = Struct('>I').pack
@@ -52,7 +53,7 @@ _pack_int = Struct('>I').pack
 
 def pbkdf2_hex(data, salt, iterations=1000, keylen=24, hashfunc=None):
     """Like :func:`pbkdf2_bin` but returns a hex encoded string."""
-    return pbkdf2_bin(data, salt, iterations, keylen, hashfunc).encode('hex')
+    return str(binascii.hexlify(pbkdf2_bin(data, salt, iterations, keylen, hashfunc)), 'ascii')
 
 
 def pbkdf2_bin(data, salt, iterations=1000, keylen=24, hashfunc=None):
@@ -61,26 +62,29 @@ def pbkdf2_bin(data, salt, iterations=1000, keylen=24, hashfunc=None):
     key of `keylen` bytes.  By default SHA-256 is used as hash function,
     a different hashlib `hashfunc` can be provided.
     """
+
+    bchr = lambda v: bytes((v,))
+
     hashfunc = hashfunc or hashlib.sha256
     mac = hmac.new(data, None, hashfunc)
     def _pseudorandom(x, mac=mac):
         h = mac.copy()
         h.update(x)
-        return map(ord, h.digest())
+        return h.digest()
     buf = []
-    for block in xrange(1, -(-keylen // mac.digest_size) + 1):
+    for block in range(1, -(-keylen // mac.digest_size) + 1):
         rv = u = _pseudorandom(salt + _pack_int(block))
-        for i in xrange(iterations - 1):
-            u = _pseudorandom(''.join(map(chr, u)))
-            rv = starmap(xor, izip(rv, u))
+        for i in range(iterations - 1):
+            u = _pseudorandom(b''.join(map(bchr, u)))
+            rv = starmap(xor, zip(rv, u))
         buf.extend(rv)
-    return ''.join(map(chr, buf))[:keylen]
+    return b''.join(map(bchr, buf))[:keylen]
 
 
 def test():
     failed = []
     def check(data, salt, iterations, keylen, expected):
-        rv = pbkdf2_hex(data, salt, iterations, keylen)
+        rv = pbkdf2_hex(bytes(data, "utf-8"), bytes(salt, "utf-8"), iterations, keylen, hashlib.sha1)
         if rv != expected:
             print('Test failed:')
             print('  Expected:   %s' % expected)

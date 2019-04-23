@@ -12,7 +12,7 @@ def disallow_keywords(tokens,keywords=None):
 		if isinstance(t, VMIdent):
 			if t.name in keywords:
 				raise ParseException("Restricted keyword: %s" % (t.name,))
-		elif isinstance(t, unicode):
+		elif isinstance(t, str):
 			tstr = t.encode('ascii', 'ignore')
 			if tstr in keywords:
 				raise ParseException("Restricted keyword: %s" % (tstr,))
@@ -98,10 +98,10 @@ class VMTablePair(VMType):
 class VMString(VMType):
 	def __init__(self, value):
 		VMType.__init__(self)
-		if isinstance(value, unicode):
+		if isinstance(value, str):
 			self.value = value
 		else:
-			self.value = unicode(str(value), 'ascii', 'ignore')
+			self.value = str(value, 'ascii', 'ignore')
 	
 	def __repr__(self):
 		return "\"%s\"" % (repr(self.value)[1:].strip("'").replace("\\'", "'").replace('"', '\\"'),)
@@ -138,7 +138,7 @@ class VMIdent(VMRef):
 		self.name = name
 		
 	def bytecode(self):
-		return [StackLiteral(unicode(self.name))]
+		return [StackLiteral(str(self.name))]
 
 	@staticmethod
 	@tokenparser
@@ -156,7 +156,7 @@ class VMVariable(VMRef):
 		self.name = name
 
 	def ref(self):
-		return [StackLiteral(unicode(self.name))]
+		return [StackLiteral(str(self.name))]
 
 	def bytecode(self):
 		return codejoin(self.ref(), GetVariable())

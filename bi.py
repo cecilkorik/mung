@@ -1,4 +1,4 @@
-from builtins_code import bi
+from bi_code import bi
 
 __all__ = ['builtin_map']
 

@@ -1,5 +1,5 @@
 from language_tools import *
-from builtins import builtin_map
+from bi import builtin_map
 import optimizer
 
 
@@ -11,7 +11,7 @@ def coerce(value):
 		return VMInteger(value)
 	elif isinstance(value, (tuple, list)):
 		return VMList(list(value))
-	elif isinstance(value, unicode):
+	elif isinstance(value, str):
 		return VMString(value)
 	elif isinstance(value, dict):
 		return VMTable(value)
@@ -298,7 +298,7 @@ class UnaryOp(CodeOp):
 		rv = []
 		ops = []
 		for t in tokens:
-			if isinstance(t, (str, unicode)) and t in UnaryOp.map:
+			if isinstance(t, (str, bytes)) and t in UnaryOp.map:
 				ops.append(UnaryOp(UnaryOp.map[t]))
 			else:
 				rv.append(t)
@@ -524,7 +524,7 @@ class WhileBlock(CodeOp):
 	def parse(tokens):
 		rv = WhileBlock()
 		
-		for i in xrange(1, len(tokens)):
+		for i in range(1, len(tokens)):
 			tok = tokens[i]
 			if rv.cond == None:
 				rv.cond = tok
@@ -583,7 +583,7 @@ class TryBlock(CodeOp):
 		rv = TryBlock()
 		
 		active_tok = None
-		for i in xrange(1, len(tokens)):
+		for i in range(1, len(tokens)):
 			tok = tokens[i]
 			if tok in ("try", "except", "else", "finally"):
 				active_tok = tok
@@ -677,7 +677,7 @@ class ForeachBlock(CodeOp):
 	def parse(tokens):
 		rv = ForeachBlock()
 		
-		for i in xrange(1, len(tokens)):
+		for i in range(1, len(tokens)):
 			tok = tokens[i]
 			if rv.var == None:
 				rv.var = tok
@@ -717,7 +717,7 @@ class IfBlock(CodeOp):
 		conds = []
 		tok_count = 0
 		active_tok = None
-		for i in xrange(len(tokens)):
+		for i in range(len(tokens)):
 			tok = tokens[i]
 
 			if tok == "endif":

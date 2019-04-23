@@ -92,12 +92,12 @@ class Connection(object):
 		data = self.conn.recv(bytes)
 
 		if self.input_encoding == 'raw':
-			return unicode(self.escape(data), 'ascii')
+			return str(self.escape(data), 'ascii')
 		else:
-			return unicode(data, self.input_encoding, 'ignore')
+			return str(data, self.input_encoding, 'ignore')
 			
 	def send(self, data):
-		assert isinstance(data, unicode)
+		assert isinstance(data, str)
 		try:
 			encoded = data.encode(self.output_encoding, 'replace')
 		except UnicodeEncodeError:
