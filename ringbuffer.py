@@ -60,7 +60,7 @@ class RingBuffer(object):
 
 	def rewind(self, bytes):
 		if bytes > self.read_pos:
-			raise ValueError, "Buffer is not big enough to rewind that far"
+			raise ValueError("Buffer is not big enough to rewind that far")
 		
 		self.read_pos -= bytes
 		if bytes > 0:
@@ -85,7 +85,7 @@ class SplitRingBuffer(RingBuffer):
 
 class RingBufferFull(object):
 	def __init__(self, size):
-		raise NotImplementedError, "You should not create this class manually, use RingBuffer() instead"
+		raise NotImplementedError("You should not create this class manually, use RingBuffer() instead")
 	
 	def overflow_buffer():
 		self.buffer_pos = 0
@@ -172,7 +172,7 @@ class RingBufferFull(object):
 
 	def rewind(self, bytes):
 		if bytes > self.sizeleft():
-			raise ValueError, "Buffer is not big enough to rewind that far"
+			raise ValueError("Buffer is not big enough to rewind that far")
 		
 		self.read_pos -= bytes
 		if self.read_pos < 0:

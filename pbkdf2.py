@@ -82,13 +82,13 @@ def test():
     def check(data, salt, iterations, keylen, expected):
         rv = pbkdf2_hex(data, salt, iterations, keylen)
         if rv != expected:
-            print 'Test failed:'
-            print '  Expected:   %s' % expected
-            print '  Got:        %s' % rv
-            print '  Parameters:'
-            print '    data=%s' % data
-            print '    salt=%s' % salt
-            print '    iterations=%d' % iterations
+            print('Test failed:')
+            print('  Expected:   %s' % expected)
+            print('  Got:        %s' % rv)
+            print('  Parameters:')
+            print('    data=%s' % data)
+            print('    salt=%s' % salt)
+            print('    iterations=%d' % iterations)
             print
             failed.append(1)
 

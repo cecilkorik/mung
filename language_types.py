@@ -11,14 +11,14 @@ def disallow_keywords(tokens,keywords=None):
 	for t in tokens:
 		if isinstance(t, VMIdent):
 			if t.name in keywords:
-				raise ParseException, "Restricted keyword: %s" % (t.name,)
+				raise ParseException("Restricted keyword: %s" % (t.name,))
 		elif isinstance(t, unicode):
 			tstr = t.encode('ascii', 'ignore')
 			if tstr in keywords:
-				raise ParseException, "Restricted keyword: %s" % (tstr,)
+				raise ParseException("Restricted keyword: %s" % (tstr,))
 		elif isinstance(t, str):
 			if t in keywords:
-				raise ParseException, "Restricted keyword: %s" % (t,)
+				raise ParseException("Restricted keyword: %s" % (t,))
 				
 disallow_keywords.keywords = set('if,elseif,else,endif,try,except,finally,endtry,while,endwhile,continue,break,for,foreach,endfor'.split(','))
 
@@ -119,7 +119,7 @@ class VMObjRef(VMType):
 		elif isinstance(value, (float, int)):
 			self.value = int(value)
 		else:
-			raise TypeError, "Attempted to create VMObjRef with invalid object reference: %r" % (value,)
+			raise TypeError("Attempted to create VMObjRef with invalid object reference: %r" % (value,))
 			
 	@staticmethod
 	@tokenparser

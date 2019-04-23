@@ -159,14 +159,14 @@ class Listener(object):
 			connid = random.randint(1, 65535)
 
 			if not connid in self.connections:
-				print "%s connected from %s" % (connid, addr)
+				print("%s connected from %s" % (connid, addr))
 				self.connections[connid] = Connection(connid, conn, addr)
 				self.connection_list_dirty = True
 				break
 
 
 	def delete_connection(self, conn):
-		print "%s disconnected." % (conn.id,)
+		print("%s disconnected." % (conn.id,))
 		del self.connections[conn.id]
 		self.remove_from_poller.append(conn.conn)
 		self.connection_list_dirty = True
@@ -233,7 +233,7 @@ class Listener(object):
 if __name__ == "__main__":
 	l = Listener()
 	l.listen("", 7878)
-	print "Listening on %s:%d" % (l.bind_addr, l.bind_port)
+	print("Listening on %s:%d" % (l.bind_addr, l.bind_port))
 	
 	try:
 		while True:

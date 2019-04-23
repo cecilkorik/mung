@@ -6,7 +6,7 @@ import optimizer
 
 
 def coerce(value):
-	from language_types import *
+	from language_types import VMInteger, VMList, VMString, VMTable, VMObjRef, VMFloat, VMType
 	if isinstance(value, int):
 		return VMInteger(value)
 	elif isinstance(value, (tuple, list)):
@@ -165,7 +165,7 @@ class CallBuiltin(CodeOp):
 	@tokenparser
 	def parse(tokens):
 		#if not tokens[0] in builtin_map:
-		#	raise ParseException, 'Attempt to call undefined builtin function: "%s"' % (tokens[0],)
+		#	raise ParseException('Attempt to call undefined builtin function: "%s"' % (tokens[0],))
 		return codejoin(tokens[0], tokens[1], CallBuiltin())
 		
 class CallFunction(CodeOp):
@@ -319,7 +319,7 @@ class Assignment(CodeOp):
 			elif isinstance(var, VMFileRef):
 				var = var.ref() + [SetFile()]
 			else:
-				raise ValueError, "Assignment to unknown type: %s" % (var,)
+				raise ValueError("Assignment to unknown type: %s" % (var,))
 				
 			return codejoin(tokens[2:], var)
 		return tokens

@@ -170,7 +170,7 @@ class VirtualMachine(object):
 	
 	def uncaught_exception(self):
 		for exc in self.task.exc_stack:
-			print "Unhandled exception: %s" % (exc,)
+			print("Unhandled exception: %s" % (exc,))
 	
 	def run_active_task(self):
 		task_id = self.active_task_id
@@ -238,7 +238,7 @@ class VirtualMachine(object):
 			self.uncaught_exception()
 			self.finished_start_next()
 		else:
-			print "executing %s with stack %s" % (op, self.task.stack)
+			print("executing %s with stack %s" % (op, self.task.stack))
 			#op.load_stack(self)
 			op.execute(self)
 			

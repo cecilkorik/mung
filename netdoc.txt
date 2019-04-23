@@ -1,0 +1,102 @@
+NETWORKING DETAILS
+~~~~~~~~~~~~~~~~~~
+As a primarily network-driven multi-user environment, networking is fundamental to the general
+operation of the server. This document will review the expected usage scenarios with the intent of 
+providing an overview of how the networking will typically work.
+
+DEFINITIONS
+~~~~~~~~~~~
+It will help to define a few terms that will be used frequently:
+
+server
+	The long running process which handles all oprtations
+connection
+	A TCP network connection, typically established from a client to the server, but also applies 
+	to outbound connections the server establishes.
+listener
+	An object which has a listening port assigned to it, which will be notified of incoming 
+	connections via that port.
+object
+	An already existing object in the database.
+connection id
+	A randomly generated numeric identifier that uniquely identifies a connection for its entire
+	duration and lifetime
+assigned connection
+	A connection becomes officially "assigned" once it has been assigned from the listener to an
+	in-database object of its own.
+assigning
+	While a connection starts as just a numeric id, in most cases it will eventually be assigned
+	to an in-database object so it can be tracked more obviously and interacted with more easily.
+player
+	A specific type of object intended to have a user interactively connected to it, able to
+	execute actions within the server and is usually the primary interface to most servers. 
+
+PORT LISTENING
+~~~~~~~~~~~~~~
+Except in very specialized situations, the server should always be listening on at least one
+network port. Each listening port must be assigned a corresponding object in the database, known as
+a listener object. This object will be expected to have various functions to handle incoming
+connections.
+
+TYPICAL CONFIGURATION
+~~~~~~~~~~~~~~~~~~~~~
+In a typical setup, the server will listen on an arbitrary high-numbered port (7777 is traditional)
+and this port will be assigned a listener object of #0, the default system object. The system object
+will provide functions that displays a login page or splash screen on initial connection as well as
+being able to interpret basic commands. At some point, the remote connection will be expected to
+provide a name and password that will allow them to login at which point their connection will be
+reassigned from #0 to the selected user's player object.
+
+TCP connections will normally be assumed, but allowing UDP connections will be a goal as well.
+
+INCOMING CONNECTION
+~~~~~~~~~~~~~~~~~~~
+When a connection is first received, it will be assigned an arbitrary, randomized connection id.
+Most likely to be implemented as an integer. This connection id will persist for the life of the
+connection and will not change unless the connection is dropped and a new connection is established,
+which is considered a new connection in all respects and is thus assigned a new connection id.
+
+The connection id (assigned by the server) will be passed to the "initial_connection" function on
+the appropriate listener object, based on the port the new connection is coming through.
+
+Although the connection will be initialized in a default state, the initial_connection function is 
+expected to immediately assign any connection options it wishes and make any necessary preparations 
+to be ready to immediately begin receiving data from the connection. As long as the 
+initial_connection function does this without suspending or any other delay, it can be expected
+that the assigned options will take effect before any data from the connection is processed.
+
+Depending on the needs of the connection or protocol, it is acceptable for the initial_connection
+function to send or attempt to receive data from the incoming connection. For example, a port 7777
+connection may be immediately presented with a login splash screen.
+
+CONNECTION CONFIGURATION
+~~~~~~~~~~~~~~~~~~~~~~~~
+The connection can be configured in two basic modes: data mode and command mode. Data mode, the
+default configuration, treats the connection as a basic IO pipe, with little interpretation done to 
+the data being sent or received. There will be no automatic reaction to data sent by the connection.
+
+Command mode allows the connection to take advantage of the server's normal command processing
+routines. Input will be automatically interpreted in the usual way that it is for players, even if
+the connection is not yet assigned to a player object. For more details on the specifics of command 
+processing, please review commanddoc.txt
+
+Traditionally, a connection will be switched to command mode once it is assigned, which will allow
+it to interact with the objects and command functions in an interactive fashion. However, if so
+desired it can instead be set to data mode and in this case the object it is connected to will act 
+like a private "listener" object specifically for that connection and will be able to interact with 
+the connection in the same way as a listener does. For many protocols this may make more sense.
+Alternately, the connection can simply not be assigned to an object at all and instead remain on 
+the port listener object.
+
+CONNECTION ASSIGNMENT
+~~~~~~~~~~~~~~~~~~~~~
+Once an appropriate object has been selected for the unassigned connection, it can be assigned to
+that object at any point. The appropriate object may be selected by, for example, matching the
+credentials provided by the unassigned connection, or by selecting an object out of a pool of
+placeholders arbitrarily, or by creating a new object from scratch, depending on the application.
+
+To assign the connection, the built-in function "assign_connection" can be used. 
+
+
+Once the initial connection id has been configured, it is ready for low level IO only until it has
+been assigned to an object.

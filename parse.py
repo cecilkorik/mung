@@ -172,9 +172,9 @@ class Parser(object):
 
 		endl.setParseAction(DiscardStack.parse)
 		self.parser = block
-		#print argspec.parseString("hello(hi.xyz)", parseAll=True)
-		#print block.parseString(u"hi.xyz + #555.test;", parseAll=True)
-		#print block.parseString("""serverlog();""")
+		#print(argspec.parseString("hello(hi.xyz)", parseAll=True))
+		#print(block.parseString(u"hi.xyz + #555.test;", parseAll=True))
+		#print(block.parseString("""serverlog();"""))
 
 	def parse(self, data):
 		rv = self.parser.parseString(data, parseAll=True)
@@ -195,11 +195,11 @@ class Parser(object):
 		return [cmd, vars]
 
 	def test(self):
-		#print self.parse(u"if (1) #740.xyz + -hello.world; endif")
+		#print(self.parse(u"if (1) #740.xyz + -hello.world; endif"))
 		
 		data = unicode(open("test.moo", "r").read(), 'utf-8')
 		rv = self.parse(data)
-		print rv
+		print(rv)
 		return rv
 	
 	

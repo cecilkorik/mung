@@ -50,7 +50,7 @@ class Server(object):
 		if ds[-1] == '':
 			del ds[-1]
 		for line in ds:
-			print "%s: %s" % (conn.id, line)
+			print("%s: %s" % (conn.id, line))
 			cmd, vars = static_parser.parse_command(line)
 			self.db.match_command(cmd, vars)
 	

@@ -5,7 +5,7 @@ class builtin_functions(object):
 		
 	@staticmethod
 	def serverlog(vm, args):
-		print "server_log: %s" % (args,)
+		print("server_log: %s" % (args,))
 		
 	@staticmethod
 	def create(vm, args):

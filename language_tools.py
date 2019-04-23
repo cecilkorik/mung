@@ -24,7 +24,7 @@ def tokenparser(func):
 			for x in gd:
 				if hasattr(gd[x], "parse") and gd[x].parse == newfunc:
 					funcobj = x
-			print "Error with %s.parse tokens: %s" % (funcobj, tokens)
+			print("Error with %s.parse tokens: %s" % (funcobj, tokens))
 			traceback.print_exc(e)
 			raise
 

@@ -48,7 +48,7 @@ def optimize(data):
 	
 	for x in data:
 		if not hasattr(x, "pos"):
-			print "Missing position on element %s" % (x,)
+			print("Missing position on element %s" % (x,))
 	
 	return data
 		
