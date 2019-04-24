@@ -6,7 +6,7 @@ import optimizer
 
 
 def coerce(value):
-	from language_types import VMInteger, VMList, VMString, VMTable, VMObjRef, VMFloat, VMType
+	from language_types import ObjRef, VMInteger, VMList, VMString, VMTable, VMObjRef, VMFloat, VMType
 	if isinstance(value, int):
 		return VMInteger(value)
 	elif isinstance(value, (tuple, list)):

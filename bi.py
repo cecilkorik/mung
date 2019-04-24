@@ -102,7 +102,7 @@ builtin_map.update({
 """
 
 builtin_map.update({
-		'serverlog': bi.serverlog,
+		b'serverlog': bi.serverlog,
 	})
 
 """

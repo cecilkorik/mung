@@ -111,11 +111,11 @@ class VirtualMachine(object):
 		self.task.exc_stack.append(exc)
 		
 	def pop(self, count=1):
-		stack = [uncoerce(self.task.stack.pop()) for x in xrange(count)]
+		stack = [uncoerce(self.task.stack.pop()) for x in range(count)]
 		return [x for x in reversed(stack)]
 
 	def pop_raw(self, count=1):
-		stack = [self.task.stack.pop() for x in xrange(count)]
+		stack = [self.task.stack.pop() for x in range(count)]
 		return [x for x in reversed(stack)]
 		
 	def push(self, value):

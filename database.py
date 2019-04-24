@@ -134,7 +134,7 @@ class Database(object):
 				i += 1
 				break
 				
-	def get_obj(self, objref):
+	def get_obj(self, objnum):
 		i = objnum
 		if i < len(self.objects):
 			self.objects[i:] = []

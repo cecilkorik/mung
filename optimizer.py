@@ -30,7 +30,7 @@ def bytecode_flatten(l, ltypes=(list, tuple, ParseResults)):
 		if broken:
 			continue
 		assert not isinstance(l[i], ltypes)
-		assert not isinstance(l[i], (str, unicode, dict))
+		assert not isinstance(l[i], (str, bytes, dict))
 		bc = l[i].bytecode()
 		if len(bc) > 1 or bc[0] != l[i]:
 			l[i:i+1] = bc
